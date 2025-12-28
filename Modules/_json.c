@@ -1319,6 +1319,13 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+    if (indent != Py_None && !PyUnicode_Check(indent)) {
+        PyErr_Format(PyExc_TypeError,
+                     "make_encoder() argument 4 must be str or None, "
+                     "not %.200s", Py_TYPE(indent)->tp_name);
+        return NULL;
+    }
+
     s = (PyEncoderObject *)type->tp_alloc(type, 0);
     if (s == NULL)
         return NULL;
@@ -1453,6 +1460,12 @@ encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
 
     PyObject *indent_cache = NULL;
     if (self->indent != Py_None) {
+        if (indent_level != 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "_current_indent_level must be 0 when indent is set");
+            PyUnicodeWriter_Discard(writer);
+            return NULL;
+        }
         indent_cache = create_indent_cache(self, indent_level);
         if (indent_cache == NULL) {
             PyUnicodeWriter_Discard(writer);
